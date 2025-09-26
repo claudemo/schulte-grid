@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schulte Grid - Cognitive Load Research Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .mode-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 10px 20px;
+            background: #f3f4f6;
+            border-radius: 10px;
+            min-width: 120px;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .grid-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            width: 400px;
+            max-width: 90vw;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            border: 3px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+            color: #333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .cell.correct {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+            animation: correctPulse 0.6s;
+        }
+
+        .cell.wrong {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+            animation: wrongShake 0.5s;
+        }
+
+        /* No visual hints - pure attention test */
+
+        @keyframes correctPulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes wrongShake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .start-screen,
+        .results-screen {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .btn-primary {
+            padding: 12px 32px;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            font-weight: 600;
+            margin: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .cognitive-load-indicator {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+
+        .load-bar {
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .load-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #eab308 50%, #ef4444 100%);
+            width: 0%;
+            transition: width 0.5s;
+        }
+
+        .metrics-display {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .download-btn {
+            padding: 10px 20px;
+            background: #059669;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+
+        .download-btn:hover {
+            background: #047857;
+        }
+
+        /* Color interference mode styles */
+        .color-interference .cell {
+            color: var(--text-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Schulte Grid Cognitive Load Analyzer</h1>
+        <div class="subtitle">Research Tool for Attention & Cognitive Load Measurement</div>
+
+        <div class="start-screen" id="startScreen">
+            <p style="margin-bottom: 20px; color: #666; line-height: 1.6;">
+                Click numbers in sequential order (1→25) as quickly as possible.<br>
+                This tool measures your attention performance and cognitive load patterns.
+            </p>
+            <button class="btn-primary" onclick="startTest()">Start Test</button>
+        </div>
+
+        <div class="game-screen hidden" id="gameScreen">
+            <div class="controls">
+                <div class="mode-selector">
+                    <button class="mode-btn active" onclick="setMode('standard')">Standard</button>
+                    <button class="mode-btn" onclick="setMode('color')">Color Interference</button>
+                    <button class="mode-btn" onclick="setMode('pressure')">Time Pressure</button>
+                </div>
+                <button class="btn-primary" onclick="resetGrid()">New Grid</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Current Number</div>
+                    <div class="stat-value" id="currentNumber">1</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Time</div>
+                    <div class="stat-value" id="timer">0.0s</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Errors</div>
+                    <div class="stat-value" id="errors">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Avg Click Time</div>
+                    <div class="stat-value" id="avgClickTime">0.0s</div>
+                </div>
+            </div>
+
+            <div class="cognitive-load-indicator">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Cognitive Load</span>
+                    <span id="loadPercentage">0%</span>
+                </div>
+                <div class="load-bar">
+                    <div class="load-fill" id="loadFill"></div>
+                </div>
+            </div>
+
+            <div class="grid-container">
+                <div class="grid" id="grid"></div>
+            </div>
+        </div>
+
+        <div class="results-screen hidden" id="resultsScreen">
+            <h2 style="margin-bottom: 20px;">Test Complete!</h2>
+            <div class="metrics-display">
+                <div class="metric-row">
+                    <span>Total Time:</span>
+                    <span id="finalTime">0s</span>
+                </div>
+                <div class="metric-row">
+                    <span>Total Errors:</span>
+                    <span id="finalErrors">0</span>
+                </div>
+                <div class="metric-row">
+                    <span>Average Click Interval:</span>
+                    <span id="finalAvgClick">0s</span>
+                </div>
+                <div class="metric-row">
+                    <span>Cognitive Load Score:</span>
+                    <span id="finalLoadScore">0</span>
+                </div>
+                <div class="metric-row">
+                    <span>Performance Rating:</span>
+                    <span id="performanceRating">-</span>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="startTest()">New Test</button>
+            <button class="download-btn" onclick="downloadData()">Download Data (CSV)</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            currentNumber: 1,
+            startTime: null,
+            clickTimes: [],
+            errors: 0,
+            mode: 'standard',
+            isRunning: false,
+            timerInterval: null,
+            clickIntervals: [],
+            mouseMovements: [],
+            hesitations: [],
+            gridSequence: [],
+            cognitiveLoadScores: []
+        };
+
+        // Research data collection
+        let researchData = {
+            sessions: [],
+            currentSession: null
+        };
+
+        // Color combinations for interference mode
+        const colorCombos = [
+            '#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'
+        ];
+
+        function generateGrid() {
+            const numbers = Array.from({ length: 25 }, (_, i) => i + 1);
+
+            // Fisher-Yates shuffle
+            for (let i = numbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+            }
+
+            return numbers;
+        }
+
+        function createGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            grid.className = 'grid';
+
+            gameState.gridSequence = generateGrid();
+
+            if (gameState.mode === 'color') {
+                grid.classList.add('color-interference');
+            }
+
+            gameState.gridSequence.forEach((number, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.textContent = number;
+                cell.dataset.number = number;
+
+                if (gameState.mode === 'color') {
+                    // Assign random text color for interference
+                    cell.style.setProperty('--text-color', colorCombos[Math.floor(Math.random() * colorCombos.length)]);
+                }
+
+                cell.addEventListener('click', () => handleCellClick(number));
+                grid.appendChild(cell);
+            });
+        }
+
+        function handleCellClick(number) {
+            if (!gameState.isRunning) return;
+
+            const currentTime = Date.now();
+            const clickTime = (currentTime - gameState.startTime) / 1000;
+
+            // Calculate click interval
+            if (gameState.clickTimes.length > 0) {
+                const interval = clickTime - gameState.clickTimes[gameState.clickTimes.length - 1];
+                gameState.clickIntervals.push(interval);
+                updateCognitiveLoad(interval);
+            }
+
+            gameState.clickTimes.push(clickTime);
+
+            if (number === gameState.currentNumber) {
+                // Correct click
+                const cell = document.querySelector(`[data-number="${number}"]`);
+                cell.classList.add('correct');
+                cell.style.pointerEvents = 'none';
+
+                gameState.currentNumber++;
+
+                if (gameState.currentNumber <= 25) {
+                    document.getElementById('currentNumber').textContent = gameState.currentNumber;
+                } else {
+                    // Test complete
+                    endTest();
+                }
+
+                updateAverageClickTime();
+            } else {
+                // Wrong click
+                const cell = document.querySelector(`[data-number="${number}"]`);
+                cell.classList.add('wrong');
+                setTimeout(() => cell.classList.remove('wrong'), 500);
+
+                gameState.errors++;
+                document.getElementById('errors').textContent = gameState.errors;
+
+                // Track error for cognitive load
+                gameState.cognitiveLoadScores.push(100);
+            }
+        }
+
+        function updateCognitiveLoad(interval) {
+            // Calculate cognitive load based on:
+            // - Click interval (longer = higher load)
+            // - Recent errors
+            // - Variance in click times
+
+            let loadScore = 0;
+
+            // Interval-based load (normalized to 0-100)
+            const expectedInterval = 1.2; // Expected seconds between clicks
+            const intervalLoad = Math.min(100, (interval / expectedInterval) * 50);
+            loadScore += intervalLoad * 0.5;
+
+            // Error-based load
+            const recentErrors = gameState.errors / Math.max(1, gameState.currentNumber - 1);
+            loadScore += recentErrors * 100 * 0.3;
+
+            // Variance-based load (consistency)
+            if (gameState.clickIntervals.length > 3) {
+                const recent = gameState.clickIntervals.slice(-5);
+                const mean = recent.reduce((a, b) => a + b) / recent.length;
+                const variance = recent.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / recent.length;
+                loadScore += Math.min(40, variance * 20) * 0.2;
+            }
+
+            gameState.cognitiveLoadScores.push(Math.min(100, loadScore));
+
+            // Update UI
+            const loadFill = document.getElementById('loadFill');
+            const loadPercentage = document.getElementById('loadPercentage');
+            loadFill.style.width = `${loadScore}%`;
+            loadPercentage.textContent = `${Math.round(loadScore)}%`;
+        }
+
+        function updateAverageClickTime() {
+            if (gameState.clickIntervals.length > 0) {
+                const avg = gameState.clickIntervals.reduce((a, b) => a + b) / gameState.clickIntervals.length;
+                document.getElementById('avgClickTime').textContent = avg.toFixed(1) + 's';
+            }
+        }
+
+        function startTimer() {
+            gameState.timerInterval = setInterval(() => {
+                if (gameState.isRunning) {
+                    const elapsed = (Date.now() - gameState.startTime) / 1000;
+                    document.getElementById('timer').textContent = elapsed.toFixed(1) + 's';
+
+                    // Time pressure mode
+                    if (gameState.mode === 'pressure' && elapsed > 30) {
+                        document.getElementById('timer').style.color = '#ef4444';
+                        if (elapsed > 45) {
+                            endTest();
+                        }
+                    }
+                }
+            }, 100);
+        }
+
+        function startTest() {
+            // Reset state
+            gameState = {
+                ...gameState,
+                currentNumber: 1,
+                startTime: Date.now(),
+                clickTimes: [],
+                errors: 0,
+                isRunning: true,
+                clickIntervals: [],
+                mouseMovements: [],
+                hesitations: [],
+                cognitiveLoadScores: []
+            };
+
+            // Initialize session data
+            researchData.currentSession = {
+                mode: gameState.mode,
+                startTime: new Date().toISOString(),
+                gridSequence: [],
+                clicks: [],
+                errors: [],
+                cognitiveLoadScores: []
+            };
+
+            // Update UI
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('currentNumber').textContent = '1';
+            document.getElementById('timer').textContent = '0.0s';
+            document.getElementById('errors').textContent = '0';
+            document.getElementById('avgClickTime').textContent = '0.0s';
+            document.getElementById('loadFill').style.width = '0%';
+            document.getElementById('loadPercentage').textContent = '0%';
+
+            createGrid();
+            startTimer();
+
+            // Track mouse movements for additional metrics
+            document.addEventListener('mousemove', trackMouseMovement);
+        }
+
+        function endTest() {
+            gameState.isRunning = false;
+            clearInterval(gameState.timerInterval);
+            document.removeEventListener('mousemove', trackMouseMovement);
+
+            // Calculate final metrics
+            const totalTime = (Date.now() - gameState.startTime) / 1000;
+            const avgClickInterval = gameState.clickIntervals.length > 0
+                ? gameState.clickIntervals.reduce((a, b) => a + b) / gameState.clickIntervals.length
+                : 0;
+            const avgCognitiveLoad = gameState.cognitiveLoadScores.length > 0
+                ? gameState.cognitiveLoadScores.reduce((a, b) => a + b) / gameState.cognitiveLoadScores.length
+                : 0;
+
+            // Performance rating
+            let rating = 'Needs Practice';
+            if (totalTime < 30 && gameState.errors < 3) rating = 'Excellent';
+            else if (totalTime < 45 && gameState.errors < 5) rating = 'Good';
+            else if (totalTime < 60 && gameState.errors < 8) rating = 'Average';
+
+            // Save session data
+            researchData.currentSession.endTime = new Date().toISOString();
+            researchData.currentSession.totalTime = totalTime;
+            researchData.currentSession.totalErrors = gameState.errors;
+            researchData.currentSession.avgClickInterval = avgClickInterval;
+            researchData.currentSession.avgCognitiveLoad = avgCognitiveLoad;
+            researchData.currentSession.performanceRating = rating;
+            researchData.sessions.push(researchData.currentSession);
+
+            // Update results UI
+            document.getElementById('finalTime').textContent = totalTime.toFixed(1) + 's';
+            document.getElementById('finalErrors').textContent = gameState.errors;
+            document.getElementById('finalAvgClick').textContent = avgClickInterval.toFixed(2) + 's';
+            document.getElementById('finalLoadScore').textContent = Math.round(avgCognitiveLoad) + '/100';
+            document.getElementById('performanceRating').textContent = rating;
+
+            // Show results
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+        }
+
+        function resetGrid() {
+            if (gameState.isRunning) {
+                endTest();
+            }
+            startTest();
+        }
+
+        function setMode(mode) {
+            gameState.mode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            if (gameState.isRunning) {
+                createGrid();
+            }
+        }
+
+        function trackMouseMovement(e) {
+            // Collect mouse movement data for hesitation analysis
+            if (gameState.isRunning) {
+                gameState.mouseMovements.push({
+                    x: e.clientX,
+                    y: e.clientY,
+                    time: Date.now() - gameState.startTime
+                });
+            }
+        }
+
+        function downloadData() {
+            // Prepare CSV data
+            let csvContent = "Session,Mode,Start Time,Total Time (s),Errors,Avg Click Interval (s),Avg Cognitive Load,Performance Rating\n";
+
+            researchData.sessions.forEach((session, index) => {
+                csvContent += `${index + 1},${session.mode},${session.startTime},${session.totalTime.toFixed(2)},${session.totalErrors},${session.avgClickInterval.toFixed(3)},${session.avgCognitiveLoad.toFixed(2)},${session.performanceRating}\n`;
+            });
+
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `schulte_grid_data_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+
+</html>
